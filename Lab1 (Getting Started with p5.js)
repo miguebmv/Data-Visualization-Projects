@@ -1,0 +1,249 @@
+//Variables creation
+// I used some variables in order to control the flow of the game, other to 
+// storage important information such as the score or the attempts and other 
+// to be able to do calculations such as the angle or the position
+var shot=false;
+var p_x;
+var p_y;
+var p_ang;
+var ang;
+var speed= 9;
+var arch = true;
+var initial_position=false;
+var gravity = -11;
+var time=0;
+var new_target=true;
+var target_height=75;
+var start;
+var count=0;
+var attempts=0;
+var lives_number=5;
+var new_attempt=false;
+var new_possible_score=false;
+var lose_life=false;
+// Initial color of the background
+var color_back = [128, 191, 255];
+var change_color = false;
+
+
+function setup() {
+  createCanvas(750, 450);
+  angleMode(DEGREES);
+  frameRate(60);
+  textFont("Times New Roman");
+  //----------------------------------------------------
+  slider = createSlider(0, 20, 10, 1); // Arguments: min, max, default, step
+  slider.position(10, 130);
+  //----------------------------------------------------
+}
+
+function draw() {
+  
+  if(change_color)
+     {
+     color_back=change_brackground();
+     change_color=false;
+     }
+  speed=slider.value();
+  background(color_back[0],color_back[1],color_back[2]);
+  push();
+  drawCloud(240,175);
+  drawCloud(300,75);
+  drawCloud(400,90);
+  drawCloud(475,40);
+  drawCloud(475,150);
+
+  textSize(13);
+  text("Modify the speed of the arrow",13,125);
+  fill('green');
+  rect(0,height-24,width,24);
+  pop();
+  textSize(32);
+  if(lives_number==0)
+    {
+    textSize(100);
+    text("GAME OVER",20,height/2);
+    textSize(32);
+    text("Score: "+count,width/2-75,height/1.5);
+    }
+  else
+    {
+    lives();
+    text("Score: "+count,15,45);
+    text("Attempts: "+attempts,15,85);
+    //-------------------------------------------
+    line(width-50-speed-2,0,width-50-speed-2,height);
+    line(width-50+speed+2,0,width-50+speed+2,height);
+    //-------------------------------------------
+    //I will start to draw the archer
+    if(mouseIsPressed)
+      {
+        new_possible_score=true;
+        new_attempt=true;
+        lose_life=true;
+        initial_position=true;
+        arch=false;
+      }
+    if(new_target)
+      {
+        start = int(random(height-target_height-24)); 
+        // As I implemented some ground, this '24' makes it impossible to create a target under the ground
+        new_target=false;
+      }
+    push();
+    strokeWeight(10);
+    line(width-50,start,width-50,start+target_height);
+    pop();
+
+    push();
+    archer(40,height-110);
+    pop();
+    }
+}
+
+function lives()
+{
+  for(let i=0; i<lives_number; i++)
+    {
+      text("♥", width/2.5+i*25, 35);
+    }
+  
+}
+
+function arrow()
+{
+  ellipse(p_x+47*cos(p_ang),p_y-47*sin(p_ang),5,5);
+  line(p_x,p_y,p_x+43*cos(p_ang),p_y-43*sin(p_ang));
+  translate(p_x+43*cos(p_ang),p_y-43*sin(p_ang));
+  fill(0);
+  triangle(-sin(p_ang)*5,-cos(p_ang)*5,sin(p_ang)*5,cos(p_ang)*5,cos(p_ang)*5,-sin(p_ang)*5);
+  //-----------------------------------------------
+  // Every frame we go through, the arrow moves fordward 'speed' pixels,
+  // but depending on the angle we threw the arrow with, these pixels
+  // will be split in the 2 axes we have. Because of this, we can create
+  // a condition to determine whether the arrow hit the target or not using
+  // the position of the arrow and its previous one (we can check whether 
+  // the line between these two positions crosses the  target one)
+  if((p_x+47*cos(p_ang)>width-50-speed-2)&&(p_x+47*cos(p_ang)>width-50+speed+2))
+     {
+       for(let i=2;i<=target_height-2;i++)
+      {
+        if(round(p_y-47*sin(p_ang))==start+i)
+          {
+            if(new_possible_score)
+              {
+               count++;
+               change_color=true;
+               new_possible_score=false;
+               new_target=true;
+               lose_life=false;
+                
+              }
+          }
+        }
+       
+     }
+  if(p_x+47*cos(p_ang)>width-50+speed+3)
+    {
+          if(lose_life)
+            {
+              lives_number--;
+              lose_life=false;
+            }
+    }
+  if(new_attempt && p_x+47*cos(p_ang)>width/4)
+          {
+            attempts++;
+            new_attempt=false;
+          }
+  
+  //-----------------------------------------------  
+  p_x+=speed*cos(p_ang);
+  p_y-=speed*sin(p_ang)+(gravity/2)*time/60; 
+  time+=1;
+ 
+ if(p_x>=width)
+   {
+     arch=true;
+   }
+}
+
+function archer(x,y)
+{
+  translate(x,y);
+  ellipse(0,0,50,50);
+  push();
+  translate(-10,-5);
+  ellipse(0,0,10,5);
+  point(0,0);
+  ellipse(20,0,10,5);
+  point(20,0);
+  //I will draw the nose
+  translate(10,5);
+  line(0,0,5,2);
+  line(5,2,0,4);
+  //Now the mouth
+  translate(0,12);
+  arc(0,0,10,6,0,180);
+  pop();
+  //Body
+  line(0,25,0,65);
+  line(0,65,-15,85);
+  line(0,65,15,85);
+  strokeWeight(3);
+  //Motion of the arch and the arm:
+  translate(0,40);
+  line(0,0,-20,10);
+  ang=atan((y+40-mouseY)/(mouseX-x));
+  line(0,0,30*cos(ang),-30*sin(ang));
+  if(arch==true)
+    {
+  push()
+  fill(220,0,0,10);
+  arc(30*cos(ang),-30*sin(ang),40,40,-90-ang,-90-ang+180);  
+  pop();
+  line(43*cos(ang),-43*sin(ang),60*cos(ang),-60*sin(ang));
+  translate(60*cos(ang),-60*sin(ang));
+  fill(0);
+  triangle(-sin(ang)*5,-cos(ang)*5,sin(ang)*5,cos(ang)*5,cos(ang)*5,-sin(ang)*5);
+  line(15*cos(ang),-15*sin(ang),0.3*width*cos(ang),-0.3*width*sin(ang));     
+    } else {
+      if(initial_position)
+        {
+      p_x=x+60*cos(ang);
+      p_y=y+40-60*sin(ang);
+      p_ang=ang;
+      time=0;
+      initial_position=false;
+        }
+      translate(-x,-y-40);
+      arrow();
+    }
+  }
+
+function drawCloud(x,y) {
+  push();
+  translate(x,y);
+  noStroke();
+  fill(255); // Color blanco para la nube
+  var radio1 = 22;
+  var radio2 = 19;
+  // Dibuja la nube utilizando elipses
+  ellipse(0, 0, radio1 * 2, radio1 * 2);
+  ellipse(- radio1 * 0.5,- radio1 * 0.25, radio2 * 2, radio2 * 1.5);
+  ellipse(radio1 * 0.5,- radio1 * 0.25, radio2 * 2, radio2 * 1.5);
+  ellipse(- radio1 * 0.25, 0 + radio1 * 0.25, radio2 * 1.5, radio2 * 1.2);
+  ellipse(radio1 * 0.25, radio1 * 0.25, radio2 * 1.5, radio2 * 1.2);
+  pop();
+}
+
+// I created the following function to add some difficulty changing the 
+// color of the backgorund once one target is hit
+function change_brackground()
+{
+  let a = round(random(255));
+  let b = round(random(255));
+  let c = round(random(255));
+  let backg_color = [a,b,c];
+  return backg_color;
+}
